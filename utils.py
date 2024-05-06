@@ -43,6 +43,8 @@ def transDD(circ, backend, echo="X", echo_num=2, qubit_list=[]):
         circ.qubits[q] for q in range(circ.num_qubits)
     ]
 
+    print("Initial layout:", initial_layout)
+
     # transpile to backend and schedule
     circuit = transpile(
         circ, backend, initial_layout=initial_layout,scheduling_method="alap"

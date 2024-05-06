@@ -193,7 +193,7 @@ class BS3CXheavyhex:
         qc = QuantumCircuit(self.num_qubits,(2*d*(d-1)+d**2-1)*T+2*d**2+('LS' in log_gate[-1])*2*d)
 
         #initialize qubits and ancillas
-        if self.num_qubits==-1:
+        if self.num_qubits==-1: # MAURICE: Why reset all the qubits?
             self.noisy_reset(qc,qubit_index_list3CX)
             self.noisy_reset(qc,qubit_index_listBS)
             self.noisy_reset(qc,measure_x_qubits_cycle0)
@@ -205,12 +205,14 @@ class BS3CXheavyhex:
         if logical_prep[1] == 'X':
             self.noisy_h(qc,qubit_index_listBS)
         self.noisy_h(qc,measure_x_qubits_cycle0)
-        self.noisy_h(qc,measure_x_qubitsBS)
+        self.noisy_h(qc,measure_x_qubitsBS) # MAURICE: To do H CNOT H to measure out the X basis
 
-        num_meas_per_round = d**2-1 + 2*d*(d-1)
+        num_meas_per_round = d**2-1 + 2*d*(d-1) # MAURICE: Which one is the BS?
         measuredict = {} 
         for time in range(T):
-            if time in log_round:
+
+            # MAURICE: This seems like the log round for the log operation => IGNORE
+            if time in log_round: # MAURICE: what is log_round? List of important rounds
                 if log_gate[log_round.index(time)]=='CX':
                     for q1,q2 in zip(qubit_index_list3CX,qubit_index_listBS):
                         self.noisy_cx(qc,[q1,q2])
@@ -219,9 +221,9 @@ class BS3CXheavyhex:
                         self.noisy_cx(qc,[q1,q2])
             # qc.barrier()
 
-            if time%2==1:                
-                for round_key in CX_schedule:
-                    pair_target_pos = self.pair_target_pos_dict[round_key]
+            if time%2==1:  # MAURICE: For odd times        
+                for round_key in CX_schedule: # list = ['3CX0', '3CX1', '3CX2', '3CX3', 'BSX0', 'BSX1', 'BSZ0', 'BSZ1'],
+                    pair_target_pos = self.pair_target_pos_dict[round_key] # self.pair_target_pos_dict = {'3CX0': np.transpose(pair_target_pos3CX_round0),
                     self.skip_CX(qc,pair_target_pos[0],None,pair_target_pos[1],None, version = 'b')
                 if time!=T-1:
                     qc.barrier()
@@ -279,11 +281,11 @@ class BS3CXheavyhex:
             
             #BS measurements
         
-            self.noisy_h(qc,measure_x_qubitsBS)            
+            self.noisy_h(qc,measure_x_qubitsBS)  # MAURICE: after CX H again       
             self.noisy_measure(qc,measure_x_qubitsBS, [time*num_meas_per_round+(d**2-1)+i for i in range(d*(d-1))])
-            self.noisy_measure(qc,measure_z_qubitsBS, [time*num_meas_per_round+(d**2-1)+d*(d-1)+i for i in range(d*(d-1))])
-            if time!= T-1:
-                if anc_reset:
+            self.noisy_measure(qc,measure_z_qubitsBS, [time*num_meas_per_round+(d**2-1)+d*(d-1)+i for i in range(d*(d-1))]) # This gives the nb of msmts
+            if time!= T-1: # Don't need to reset in the last round
+                if anc_reset: 
                     self.noisy_reset(qc,measure_x_qubitsBS)
                     self.noisy_reset(qc,measure_z_qubitsBS)
                 self.noisy_h(qc,measure_x_qubitsBS)
@@ -817,7 +819,7 @@ class BS3CXheavyhex:
                 #X detectors
                 for q_r in range(5,5+4*(d-1),4):
                     if time==0 and (self.logical_prep[1]=='X' or every_initial_stab):
-                        detector = [(q_r+1j*q_i,time) for q_i in range(3,3+4*d,4)]
+                        detector = [(q_r+1j*q_i,time) for q_i in range(3,3+4*d,4)] # Looks like a list of imaginary coords
                         detectors_coord.append(detector)
                     if time<T-1:
                         detector = [(q_r+1j*q_i,time) for q_i in range(3,3+4*d,4)]
